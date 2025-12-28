@@ -3,221 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visual Diary | Portfolio</title>
+    <title>OGURECS'S | Ultra Portfolio</title>
     <style>
         :root {
-            --bg: #ffffff;
-            --text: #111;
-            --glass: rgba(255, 255, 255, 0.7);
-            --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --bg: #0a0a0a;
+            --text: #ffffff;
+            --accent: #00f2ff;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --glass: rgba(255, 255, 255, 0.05);
         }
 
-        @media (prefers-color-scheme: dark) {
+        @media (prefers-color-scheme: light) {
             :root {
-                --bg: #050505;
-                --text: #f0f0f0;
-                --glass: rgba(20, 20, 20, 0.7);
-                --shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+                --bg: #f8f9fa;
+                --text: #1a1a1a;
+                --accent: #5e5ce6;
+                --card-bg: rgba(0, 0, 0, 0.02);
+                --glass: rgba(0, 0, 0, 0.03);
             }
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; } /* Отключаем стандартный курсор */
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+            font-family: 'SF Pro Display', -apple-system, sans-serif;
             background: var(--bg);
             color: var(--text);
             overflow-x: hidden;
+            transition: background 0.8s ease;
         }
 
-        /* Прелоадер */
-        #loader {
+        /* Кастомный курсор */
+        #cursor {
+            position: fixed; width: 10px; height: 10px; background: var(--accent);
+            border-radius: 50%; pointer-events: none; z-index: 10000;
+            transition: transform 0.1s ease, background 0.3s ease;
+        }
+        #cursor-follower {
+            position: fixed; width: 40px; height: 40px; border: 1px solid var(--accent);
+            border-radius: 50%; pointer-events: none; z-index: 9999;
+            transition: transform 0.15s ease, width 0.3s, height 0.3s;
+        }
+
+        /* Анимированный фон */
+        .bg-glow {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg); z-index: 9999;
-            display: flex; justify-content: center; align-items: center;
-            transition: opacity 0.5s;
-        }
-        .spinner {
-            width: 40px; height: 40px; border: 3px solid var(--text);
-            border-top-color: transparent; border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(0, 242, 255, 0.05), transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(94, 92, 230, 0.05), transparent 40%);
+            z-index: -1; pointer-events: none;
         }
 
-        /* Hero секция */
         header {
-            height: 60vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 40px;
+            height: 80vh; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; position: relative;
         }
 
-        .hero-bg {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-size: cover; background-position: center;
-            filter: blur(20px) brightness(0.7);
-            transform: scale(1.1);
-            z-index: -1;
-            transition: background-image 0.5s ease;
+        .hero-title {
+            font-size: clamp(3rem, 15vw, 10rem); font-weight: 900;
+            text-transform: uppercase; letter-spacing: -5px;
+            background: linear-gradient(180deg, var(--text) 30%, var(--accent));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            opacity: 0; transform: translateY(50px);
+            animation: reveal 1.2s cubic-bezier(0.19, 1, 0.22, 1) forwards;
         }
 
-        h1 {
-            font-size: 4rem; font-weight: 900; letter-spacing: -2px;
-            color: white; text-align: center;
-            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            mix-blend-mode: overlay;
-        }
-        
-        .subtitle {
-            color: rgba(255,255,255,0.8); margin-top: 10px; font-size: 1.1rem;
-            font-weight: 300; letter-spacing: 1px; text-transform: uppercase;
-        }
+        @keyframes reveal { to { opacity: 1; transform: translateY(0); } }
 
-        /* Галерея Masonry */
+        /* Сетка с эффектом наклона */
         .gallery {
-            column-count: 3; column-gap: 20px;
-            max-width: 1400px; margin: 0 auto; padding: 0 20px 100px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 40px; padding: 40px; max-width: 1800px; margin: 0 auto;
         }
 
-        .item {
-            break-inside: avoid; margin-bottom: 20px;
-            border-radius: 12px; overflow: hidden;
-            position: relative; cursor: zoom-in;
-            box-shadow: var(--shadow);
-            transform: translateY(30px); opacity: 0;
-            transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.6s ease;
-        }
-        
-        .item.visible { transform: translateY(0); opacity: 1; }
-        .item:hover { transform: scale(1.02); z-index: 2; }
-
-        .item img {
-            width: 100%; display: block; height: auto;
-            transition: filter 0.3s;
+        .card {
+            position: relative; border-radius: 24px; overflow: hidden;
+            background: var(--card-bg); transition: transform 0.1s ease;
+            transform-style: preserve-3d; perspective: 1000px;
         }
 
-        /* Лайтбокс */
+        .card img {
+            width: 100%; height: 100%; object-fit: cover;
+            display: block; transition: transform 0.5s ease;
+        }
+
+        .card:hover img { transform: scale(1.1); }
+
+        .card-info {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            padding: 20px; background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            color: white; opacity: 0; transition: opacity 0.3s;
+        }
+        .card:hover .card-info { opacity: 1; }
+
+        /* Лайтбокс с эффектом Glassmorphism */
         .lightbox {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 1000;
-            display: flex; justify-content: center; align-items: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s;
-            backdrop-filter: blur(10px);
+            background: var(--glass); backdrop-filter: blur(25px);
+            display: none; justify-content: center; align-items: center; z-index: 10001;
         }
-        .lightbox.active { opacity: 1; pointer-events: all; }
-        .lightbox img {
-            max-height: 90vh; max-width: 90vw;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
-            border-radius: 4px;
-        }
-        .close {
-            position: absolute; top: 20px; right: 30px;
-            color: white; font-size: 40px; cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .close:hover { transform: rotate(90deg); }
+        .lightbox img { max-height: 85vh; max-width: 90vw; border-radius: 15px; box-shadow: 0 40px 100px rgba(0,0,0,0.5); }
 
-        @keyframes spin { to { transform: rotate(360deg); } }
-        
-        @media(max-width: 900px) { .gallery { column-count: 2; } h1 { font-size: 3rem; } }
-        @media(max-width: 600px) { .gallery { column-count: 1; } h1 { font-size: 2.5rem; } }
+        @media (max-width: 600px) { .gallery { grid-template-columns: 1fr; } * { cursor: auto; } #cursor, #cursor-follower { display: none; } }
     </style>
 </head>
 <body>
 
-    <div id="loader"><div class="spinner"></div></div>
+<div id="cursor"></div>
+<div id="cursor-follower"></div>
+<div class="bg-glow"></div>
 
-    <header>
-        <div class="hero-bg" id="hero-bg"></div>
-        <h1>VISUALS</h1>
-        <p class="subtitle">Photography Portfolio</p>
-    </header>
+<header>
+    <h1 class="hero-title">OGURECS'S</h1>
+    <p style="letter-spacing: 5px; opacity: 0.5;">PHOTOGRAPHY & ART</p>
+</header>
 
-    <div class="gallery" id="gallery"></div>
+<main class="gallery" id="gallery"></main>
 
-    <div class="lightbox" id="lightbox">
-        <div class="close">&times;</div>
-        <img src="" id="lightbox-img">
-    </div>
+<div class="lightbox" id="lb"><img id="lb-img" src=""></div>
 
-    <script>
-        // ВАЖНО: Фотки должны лежать в папке "img"
-        const folder = "img/"; 
-        const files = [
-            '20240726_134656.jpg', '20240727_143147.jpg', '20240727_164200.jpg', 
-            '20240729_194443.jpg', '20240730_155122.jpg', '20240805_125949.jpg', 
-            '20240816_163710.jpg', '20240819_164819.jpg', '20240915_123036.jpg', 
-            '20250406_050742.jpg', '20250703_175003.jpg', '20250711_020233.jpg', 
-            '20250711_205925.jpg', '20250712_200728.jpg', '20250713_200247.jpg', 
-            '20250713_202010.jpg', '20250807_114242.jpg', '20250811_192428.jpg', 
-            '20250905_114908.jpg', '20250907_141431_edit_104530299545696.jpg', 
-            '20250907_182546.jpg', '20250911_132125_edit_73347268173425.jpg', 
-            '20250911_163333.jpg', '20250911_184120.jpg', '20250913_123720.jpg', 
-            'IMG_20250923_164102.jpg', 'IMG_20250927_190539.jpg', 'IMG_20250927_191158.jpg', 
-            'IMG_20251008_173052.jpg', 'IMG_20251008_174454.jpg', 'IMG_20251025_200805.jpg', 
-            'IMG_20251122_223257.jpg', 'IMG_20251122_225812.jpg', 'IMG_20251122_230921.jpg', 
-            'IMG_20251127_080916.jpg', 'IMG_20251129_192327.jpg', 'IMG_20251129_193515.jpg', 
-            'IMG_20251203_124126_edit_84514267294997.jpg', 'IMG_20251224_091254_edit_3904401700852.jpg', 
-            'Screenshot_20251110_160321914_edit_129512775832520.jpg'
-        ];
+<script>
+    const files = [
+        '20240726_134656.jpg', '20240727_143147.jpg', '20240727_164200.jpg', 
+        '20240729_194443.jpg', '20240730_155122.jpg', '20240805_125949.jpg', 
+        '20240816_163710.jpg', '20240819_164819.jpg', '20240915_123036.jpg', 
+        '20250406_050742.jpg', '20250703_175003.jpg', '20250711_020233.jpg', 
+        '20250711_205925.jpg', '20250712_200728.jpg', '20250713_200247.jpg', 
+        '20250713_202010.jpg', '20250807_114242.jpg', '20250811_192428.jpg', 
+        '20250905_114908.jpg', '20250907_141431_edit_104530299545696.jpg', 
+        '20250907_182546.jpg', '20250911_132125_edit_73347268173425.jpg', 
+        '20250911_163333.jpg', '20250911_184120.jpg', '20250913_123720.jpg', 
+        'IMG_20250923_164102.jpg', 'IMG_20250927_190539.jpg', 'IMG_20250927_191158.jpg', 
+        'IMG_20251008_173052.jpg', 'IMG_20251008_174454.jpg', 'IMG_20251025_200805.jpg', 
+        'IMG_20251122_223257.jpg', 'IMG_20251122_225812.jpg', 'IMG_20251122_230921.jpg', 
+        'IMG_20251127_080916.jpg', 'IMG_20251129_192327.jpg', 'IMG_20251129_193515.jpg', 
+        'IMG_20251203_124126_edit_84514267294997.jpg', 'IMG_20251224_091254_edit_3904401700852.jpg', 
+        'Screenshot_20251110_160321914_edit_129512775832520.jpg'
+    ];
 
-        const gallery = document.getElementById('gallery');
-        const heroBg = document.getElementById('hero-bg');
-        
-        // Рандомный фон шапки из твоих же фоток
-        const randomHero = files[Math.floor(Math.random() * files.length)];
-        heroBg.style.backgroundImage = `url('${folder}${randomHero}')`;
+    const gallery = document.getElementById('gallery');
+    
+    // Рендер карточек
+    files.forEach(file => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<img src="img/${file}" loading="lazy"><div class="card-info">Shot by Ogurec</div>`;
+        gallery.appendChild(card);
 
-        // Генерация
-        files.forEach((file, i) => {
-            const item = document.createElement('div');
-            item.className = 'item';
-            item.style.animationDelay = `${i * 0.05}s`;
-            
-            const img = document.createElement('img');
-            img.src = folder + file;
-            img.loading = 'lazy';
-            
-            item.appendChild(img);
-            gallery.appendChild(item);
-
-            item.addEventListener('click', () => openLightbox(img.src));
+        // Эффект наклона (Tilt)
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const xc = rect.width / 2;
+            const yc = rect.height / 2;
+            const dx = x - xc;
+            const dy = y - yc;
+            card.style.transform = `rotateY(${dx / 15}deg) rotateX(${-dy / 15}deg)`;
         });
 
-        // Появление при скролле (Intersection Observer)
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if(entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.1 });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+        });
 
-        document.querySelectorAll('.item').forEach(el => observer.observe(el));
+        card.onclick = () => {
+            document.getElementById('lb-img').src = `img/${file}`;
+            document.getElementById('lb').style.display = 'flex';
+        };
+    });
 
-        // Удаление лоадера
-        window.onload = () => {
-            document.getElementById('loader').style.opacity = 0;
-            setTimeout(() => document.getElementById('loader').remove(), 500);
-        }
+    // Курсор
+    const cursor = document.getElementById('cursor');
+    const follower = document.getElementById('cursor-follower');
+    document.addEventListener('mousemove', (e) => {
+        cursor.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+        follower.style.transform = `translate3d(${e.clientX - 15}px, ${e.clientY - 15}px, 0)`;
+    });
 
-        // Лайтбокс логика
-        const lb = document.getElementById('lightbox');
-        const lbImg = document.getElementById('lightbox-img');
-        
-        function openLightbox(src) {
-            lbImg.src = src;
-            lb.classList.add('active');
-        }
-        
-        lb.onclick = (e) => {
-            if(e.target !== lbImg) lb.classList.remove('active');
-        }
-        document.querySelector('.close').onclick = () => lb.classList.remove('active');
-    </script>
+    document.querySelectorAll('.card').forEach(c => {
+        c.onmouseenter = () => { follower.style.width = '80px'; follower.style.height = '80px'; follower.style.background = 'var(--accent)'; follower.style.opacity = '0.3'; };
+        c.onmouseleave = () => { follower.style.width = '40px'; follower.style.height = '40px'; follower.style.background = 'transparent'; follower.style.opacity = '1'; };
+    });
+
+    document.getElementById('lb').onclick = () => document.getElementById('lb').style.display = 'none';
+</script>
+
 </body>
 </html>
