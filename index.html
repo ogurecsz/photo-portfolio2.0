@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OGURECS'S | Ultra Gallery</title>
+    <title>OGURECS | Liquid Gallery</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Manrope:wght@300;500;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Manrope:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #050505;
             --text: #ffffff;
             --accent: #00f2ff;
-            --accent-sec: #bd00ff;
-            --card-bg: rgba(255, 255, 255, 0.02);
-            --glass: rgba(10, 10, 10, 0.85);
+            --glass-card: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
@@ -24,236 +23,177 @@
             background: var(--bg);
             color: var(--text);
             overflow-x: hidden;
-            height: 100vh; /* Фиксируем высоту для прелоадера */
-            overflow: hidden; /* Блокируем скролл пока грузится */
+            height: 100vh;
+            overflow: hidden;
         }
         
-        body.loaded {
-            height: auto;
-            overflow-y: auto;
-        }
+        body.loaded { height: auto; overflow-y: auto; }
 
         /* --- PRELOADER --- */
         #loader {
-            position: fixed; inset: 0;
-            background: #000; z-index: 99999;
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
+            position: fixed; inset: 0; background: #000; z-index: 99999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
             transition: transform 0.8s cubic-bezier(0.7, 0, 0.3, 1);
         }
-        
         #loader.finish { transform: translateY(-100%); }
 
         .loader-text {
-            font-family: 'Syncopate', sans-serif;
-            font-weight: 700; font-size: 2rem;
-            color: var(--accent); letter-spacing: 5px;
-            margin-bottom: 20px;
+            font-family: 'Syncopate', sans-serif; font-weight: 700; font-size: 2rem;
+            color: var(--text); letter-spacing: 5px; margin-bottom: 20px;
             text-transform: uppercase;
         }
 
-        .progress-container {
-            width: 300px; height: 2px;
-            background: rgba(255,255,255,0.1);
+        .progress-bar-bg {
+            width: 300px; height: 2px; background: rgba(255,255,255,0.1);
             position: relative; overflow: hidden;
         }
-
         .progress-bar {
             position: absolute; left: 0; top: 0; height: 100%; width: 0%;
-            background: var(--accent);
-            box-shadow: 0 0 15px var(--accent);
+            background: var(--text); box-shadow: 0 0 10px rgba(255,255,255,0.5);
             transition: width 0.2s;
         }
-
         .loader-counter {
-            font-family: 'Syncopate', monospace;
-            margin-top: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.5);
+            font-family: 'Syncopate', monospace; margin-top: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.5);
         }
 
-        /* Шум (Noise Effect) - оптимизирован */
-        .noise {
+        /* --- HERO & BACKGROUND --- */
+        #hero-bg {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNTAnIGhlaWdodD0nMjUwJz48ZmlsdGVyIGlkPSdub2lzZSc+PHZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuNjUnIG51bU9jdGF2ZXM9JzMnIHN0aXRjaFRpbGVzPSdzdGl0Y2gnLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWx0ZXI9J3VybCgjbm9pc2UpJyBvcGFjaXR5PScwLjA1Jy8+PC9zdmc+');
-            pointer-events: none; z-index: 9000; opacity: 0.4;
+            z-index: -2; background-size: cover; background-position: center;
+            opacity: 0.4; filter: blur(4px) grayscale(30%);
+            transition: opacity 1s ease;
         }
-
-        #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; }
+        .overlay-grad {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(5,5,5,0.2), var(--bg));
+            z-index: -1; pointer-events: none;
+        }
 
         /* Курсор */
         #cursor {
-            position: fixed; width: 8px; height: 8px; background: var(--text);
+            position: fixed; width: 8px; height: 8px; background: #fff;
             border-radius: 50%; pointer-events: none; z-index: 10000;
-            mix-blend-mode: difference; transition: transform 0.05s linear;
+            mix-blend-mode: exclusion;
         }
         #cursor-follower {
-            position: fixed; width: 40px; height: 40px; border: 1px solid rgba(255,255,255,0.3);
+            position: fixed; width: 40px; height: 40px; border: 1px solid rgba(255,255,255,0.4);
             border-radius: 50%; pointer-events: none; z-index: 9999;
-            transition: transform 0.15s ease, width 0.3s, height 0.3s, background 0.3s;
-            mix-blend-mode: difference;
+            transition: transform 0.1s ease; mix-blend-mode: exclusion;
         }
 
         header {
             height: 90vh; display: flex; flex-direction: column;
             justify-content: center; align-items: center; position: relative;
             z-index: 2; opacity: 0; transform: scale(0.95);
-            transition: opacity 1s ease 0.5s, transform 1s ease 0.5s;
+            transition: opacity 1.2s ease 0.5s, transform 1.2s ease 0.5s;
         }
-        
         body.loaded header { opacity: 1; transform: scale(1); }
 
-        .hero-title {
+        /* LIQUID GLASS TEXT EFFECT */
+        .glass-title {
             font-family: 'Syncopate', sans-serif;
-            font-size: clamp(2rem, 8vw, 6rem);
+            font-size: clamp(3rem, 10vw, 8rem);
             font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: -3px;
+            color: rgba(255, 255, 255, 0.05); /* Почти прозрачный */
+            -webkit-text-stroke: 1px rgba(255, 255, 255, 0.4); /* Контур */
+            backdrop-filter: blur(5px); /* Размытие фона внутри букв (работает не везде, но где работает - топ) */
+            text-shadow: 
+                0 0 30px rgba(255, 255, 255, 0.1),
+                10px 10px 20px rgba(0, 0, 0, 0.5);
             position: relative;
-            color: var(--text);
-            letter-spacing: -2px;
-            text-shadow: 2px 2px var(--accent-sec), -2px -2px var(--accent);
-            animation: glitch-anim 3s infinite alternate;
+            z-index: 10;
+        }
+        
+        /* Дополнительный блеск */
+        .glass-title::before {
+            content: "OGURECS";
+            position: absolute; inset: 0;
+            background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+            background-clip: text; -webkit-background-clip: text;
+            color: transparent; -webkit-text-stroke: 0;
+            background-size: 200% auto;
+            animation: shine 5s infinite linear;
+            pointer-events: none;
         }
 
-        .subtitle {
-            font-family: 'Syncopate', sans-serif;
-            font-size: clamp(0.8rem, 2vw, 1.2rem);
-            letter-spacing: 4px;
-            opacity: 0.7; margin-top: 20px;
-            color: var(--accent);
-            text-transform: lowercase;
-        }
+        @keyframes shine { to { background-position: 200% center; } }
 
-        @keyframes glitch-anim {
-            0% { text-shadow: 2px 2px var(--accent-sec), -2px -2px var(--accent); transform: skew(0deg); }
-            20% { text-shadow: 2px 2px var(--accent-sec), -2px -2px var(--accent); transform: skew(0deg); }
-            21% { text-shadow: -2px 2px var(--accent), 2px -2px var(--accent-sec); transform: skew(10deg); }
-            22% { text-shadow: 2px 2px var(--accent-sec), -2px -2px var(--accent); transform: skew(0deg); }
-            100% { text-shadow: 2px 2px var(--accent-sec), -2px -2px var(--accent); transform: skew(0deg); }
-        }
-
+        /* --- GALLERY --- */
         .gallery {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 30px; padding: 40px; max-width: 1800px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px; padding: 40px; max-width: 1800px; margin: 0 auto;
             position: relative; z-index: 2;
         }
 
         .card {
-            position: relative; border-radius: 16px; overflow: hidden;
-            background: var(--card-bg);
-            /* Скелетная загрузка (эффект пульсации пока нет фото) */
-            background: linear-gradient(90deg, #111, #1a1a1a, #111);
-            background-size: 200% 100%;
-            animation: skeleton 1.5s infinite linear;
-            
-            transform-style: preserve-3d; perspective: 1000px;
-            aspect-ratio: 3/4; /* Резервируем место под вертикальные фото */
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.05);
-            transition: transform 0.3s ease;
+            position: relative; border-radius: 12px; overflow: hidden;
+            background: var(--glass-card);
+            border: 1px solid var(--glass-border);
+            aspect-ratio: 3/4; cursor: none;
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
-        @keyframes skeleton { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
-        /* Фото скрыто по умолчанию */
         .card img {
             width: 100%; height: 100%; object-fit: cover;
-            display: block; opacity: 0; 
-            transition: opacity 1s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+            opacity: 0; transition: opacity 0.8s ease, transform 0.6s ease;
+            display: block;
         }
-
-        /* Класс, который JS добавит, когда фото загрузится */
         .card img.loaded { opacity: 1; }
-        .card:hover img { transform: scale(1.05); }
+        .card:hover img { transform: scale(1.08); }
 
-        .card-overlay {
-            position: absolute; inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-            opacity: 0; transition: 0.3s;
-            display: flex; align-items: flex-end; padding: 25px;
-        }
-        .card:hover .card-overlay { opacity: 1; }
-        
-        .card-text {
-            font-family: 'Syncopate', sans-serif;
-            font-size: 0.8rem; letter-spacing: 1px;
-            transform: translateY(20px); transition: 0.3s;
-            color: var(--accent);
-        }
-        .card:hover .card-text { transform: translateY(0); }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.5); }
 
+        /* LIGHTBOX */
         .lightbox {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--glass); backdrop-filter: blur(20px);
-            display: none; justify-content: center; align-items: center; z-index: 10001;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(10px); display: none;
+            justify-content: center; align-items: center; z-index: 10001;
             opacity: 0; transition: opacity 0.3s;
         }
         .lightbox.active { opacity: 1; }
         .lightbox img {
-            max-height: 85vh; max-width: 90vw; border-radius: 4px;
-            box-shadow: 0 0 50px rgba(0, 242, 255, 0.1);
-            transform: scale(0.9); transition: transform 0.3s;
+            max-height: 90vh; max-width: 95vw; border-radius: 4px;
+            box-shadow: 0 0 60px rgba(255, 255, 255, 0.05);
         }
-        .lightbox.active img { transform: scale(1); }
 
-        @media (max-width: 600px) {
-            .gallery { grid-template-columns: 1fr; padding: 20px; }
-            * { cursor: auto; }
+        @media (max-width: 768px) {
+            .gallery { padding: 15px; gap: 15px; }
             #cursor, #cursor-follower { display: none; }
-            .hero-title { font-size: 2.5rem; }
-            .loader-text { font-size: 1.2rem; }
+            * { cursor: auto; }
+            .glass-title { font-size: 3rem; }
         }
     </style>
 </head>
 <body>
 
 <div id="loader">
-    <div class="loader-text">OGURECS SYSTEM</div>
-    <div class="progress-container">
+    <div class="loader-text">OGURECS SITE</div>
+    <div class="progress-bar-bg">
         <div class="progress-bar" id="progress-bar"></div>
     </div>
-    <div class="loader-counter" id="loader-counter">INITIALIZING... 0%</div>
+    <div class="loader-counter" id="loader-counter">0%</div>
 </div>
 
-<div class="noise"></div>
+<div id="hero-bg"></div>
+<div class="overlay-grad"></div>
+
 <div id="cursor"></div>
 <div id="cursor-follower"></div>
-<canvas id="bg-canvas"></canvas>
 
 <header>
-    <h1 class="hero-title">OGURECS'S<br><span style="color:transparent; -webkit-text-stroke: 1px var(--text); font-size: 0.7em;">PHOTO GALLERY</span></h1>
-    <p class="subtitle">visuals / art / aesthetics</p>
+    <h1 class="glass-title">OGURECS</h1>
 </header>
 
 <main class="gallery" id="gallery"></main>
 
 <div class="lightbox" id="lb">
-    <img id="lb-img" src="">
+    <img id="lb-img" src="" alt="Full view">
 </div>
 
 <script>
-    // --- 1. ЛОГИКА ЗАГРУЗКИ (PRELOADER) ---
-    const loader = document.getElementById('loader');
-    const progressBar = document.getElementById('progress-bar');
-    const counter = document.getElementById('loader-counter');
-    
-    // Эмуляция быстрой загрузки интерфейса
-    let progress = 0;
-    const interval = setInterval(() => {
-        progress += Math.random() * 10;
-        if (progress > 100) progress = 100;
-        
-        progressBar.style.width = `${progress}%`;
-        counter.innerText = `INITIALIZING... ${Math.floor(progress)}%`;
-
-        if (progress === 100) {
-            clearInterval(interval);
-            setTimeout(() => {
-                loader.classList.add('finish'); // Убираем шторку
-                document.body.classList.add('loaded'); // Включаем скролл
-                initGallery(); // ЗАПУСКАЕМ ЗАГРУЗКУ ФОТО ТОЛЬКО СЕЙЧАС
-            }, 500);
-        }
-    }, 100); // Скорость заполнения полоски
-
+    // СПИСОК ФАЙЛОВ
     const files = [
         '20240726_134656.jpg', '20240727_143147.jpg', '20240727_164200.jpg', 
         '20240729_194443.jpg', '20240730_155122.jpg', '20240805_125949.jpg', 
@@ -272,126 +212,79 @@
         'Screenshot_20251110_160321914_edit_129512775832520.jpg'
     ];
 
+    // РАНДОМ ФОН ДЛЯ ХЕДЕРА
+    const randomHero = files[Math.floor(Math.random() * files.length)];
+    document.getElementById('hero-bg').style.backgroundImage = `url('img/${randomHero}')`;
+
+    // ЗАГРУЗКА
+    const loader = document.getElementById('loader');
+    const bar = document.getElementById('progress-bar');
+    const txt = document.getElementById('loader-counter');
+    let loadP = 0;
+
+    const interval = setInterval(() => {
+        loadP += Math.random() * 15;
+        if (loadP > 100) loadP = 100;
+        bar.style.width = loadP + '%';
+        txt.innerText = Math.floor(loadP) + '%';
+
+        if (loadP === 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+                loader.classList.add('finish');
+                document.body.classList.add('loaded');
+                initGallery();
+            }, 400);
+        }
+    }, 80);
+
+    // ГАЛЕРЕЯ
     const gallery = document.getElementById('gallery');
     
-    // Функция запуска галереи (вызывается после исчезновения прелоадера)
     function initGallery() {
-        files.forEach((file, index) => {
+        files.forEach((file, i) => {
             const card = document.createElement('div');
             card.className = 'card';
             
-            // Сразу создаем карточку, но картинку не грузим
-            card.innerHTML = `
-                <div class="card-overlay"><span class="card-text">OGUREC /// RAW</span></div>
-            `;
-            
-            // Создаем объект картинки в памяти
             const img = new Image();
-            img.alt = "photo";
+            img.loading = "lazy"; // Нативный ленивый лоадинг
             
-            // Когда картинка реально скачается:
-            img.onload = () => {
-                card.prepend(img); // Вставляем в карточку
-                // Небольшая задержка для плавности, чтобы CSS успел подхватить opacity: 0
-                setTimeout(() => img.classList.add('loaded'), 50); 
-                card.style.animation = 'none'; // Убираем пульсацию скелета
-                card.style.background = 'var(--card-bg)';
-            };
-
-            // Ставим задержку старта загрузки для каждой картинки (очередь)
-            // Это разгружает сеть. Первые грузятся сразу, остальные с паузой.
+            // Отложенная загрузка скриптом для плавности появления
             setTimeout(() => {
                 img.src = `img/${file}`;
-            }, index * 100); // Каждые 100мс запускаем загрузку следующей
+                img.onload = () => img.classList.add('loaded');
+            }, i * 50);
 
+            card.appendChild(img);
             gallery.appendChild(card);
 
-            // 3D Tilt Logic
-            card.addEventListener('mousemove', (e) => {
-                const rect = card.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                const dx = (x - rect.width / 2) / 20;
-                const dy = (y - rect.height / 2) / 20;
-                card.style.transform = `rotateY(${dx}deg) rotateX(${-dy}deg) scale(1.02)`;
-            });
-
-            card.addEventListener('mouseleave', () => {
-                card.style.transform = `rotateY(0deg) rotateX(0deg) scale(1)`;
-            });
-
+            // Lightbox Click
             card.onclick = () => {
                 const lb = document.getElementById('lb');
-                const lbImg = document.getElementById('lb-img');
-                lbImg.src = `img/${file}`;
+                document.getElementById('lb-img').src = `img/${file}`;
                 lb.style.display = 'flex';
-                setTimeout(() => lb.classList.add('active'), 10);
+                requestAnimationFrame(() => lb.classList.add('active'));
             };
         });
     }
 
-    // --- ОСТАЛЬНЫЕ СКРИПТЫ (Курсор, Фон) ---
+    // ЛАЙТБОКС (закрытие)
+    document.getElementById('lb').onclick = function() {
+        this.classList.remove('active');
+        setTimeout(() => this.style.display = 'none', 300);
+    };
+
+    // КУРСОР
     const cursor = document.getElementById('cursor');
     const follower = document.getElementById('cursor-follower');
     
-    document.addEventListener('mousemove', (e) => {
-        cursor.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
-        follower.style.transform = `translate3d(${e.clientX - 20}px, ${e.clientY - 20}px, 0)`;
-    });
-
-    // Живой фон
-    const canvas = document.getElementById('bg-canvas');
-    const ctx = canvas.getContext('2d');
-    let width, height;
-    let particles = [];
-
-    function resize() {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight;
+    // Проверка на тач-устройства, чтобы не грузить логику зря
+    if (window.matchMedia("(pointer: fine)").matches) {
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+            follower.style.transform = `translate3d(${e.clientX - 20}px, ${e.clientY - 20}px, 0)`;
+        });
     }
-    window.addEventListener('resize', resize);
-    resize();
-
-    class Particle {
-        constructor() {
-            this.x = Math.random() * width;
-            this.y = Math.random() * height;
-            this.vx = (Math.random() - 0.5) * 0.5;
-            this.vy = (Math.random() - 0.5) * 0.5;
-            this.size = Math.random() * 2;
-            this.color = Math.random() > 0.5 ? 'rgba(0, 242, 255, ' : 'rgba(94, 92, 230, ';
-        }
-        update() {
-            this.x += this.vx;
-            this.y += this.vy;
-            if (this.x < 0) this.x = width;
-            if (this.x > width) this.x = 0;
-            if (this.y < 0) this.y = height;
-            if (this.y > height) this.y = 0;
-        }
-        draw() {
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fillStyle = this.color + (Math.random() * 0.5 + 0.2) + ')';
-            ctx.fill();
-        }
-    }
-
-    for (let i = 0; i < 80; i++) particles.push(new Particle()); // Чуть меньше частиц для скорости
-
-    function animate() {
-        ctx.clearRect(0, 0, width, height);
-        particles.forEach(p => { p.update(); p.draw(); });
-        requestAnimationFrame(animate);
-    }
-    animate();
-
-    const lb = document.getElementById('lb');
-    lb.onclick = () => {
-        lb.classList.remove('active');
-        setTimeout(() => lb.style.display = 'none', 300);
-    };
 </script>
-
 </body>
 </html>
