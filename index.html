@@ -3,126 +3,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OGURECS'S | Ultra Portfolio</title>
+    <title>OGURECS'S | Ultra Gallery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Manrope:wght@300;500;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0a0a0a;
+            --bg: #050505;
             --text: #ffffff;
             --accent: #00f2ff;
-            --card-bg: rgba(255, 255, 255, 0.03);
-            --glass: rgba(255, 255, 255, 0.05);
+            --accent-sec: #bd00ff;
+            --card-bg: rgba(255, 255, 255, 0.02);
+            --glass: rgba(10, 10, 10, 0.85);
         }
 
-        @media (prefers-color-scheme: light) {
-            :root {
-                --bg: #f8f9fa;
-                --text: #1a1a1a;
-                --accent: #5e5ce6;
-                --card-bg: rgba(0, 0, 0, 0.02);
-                --glass: rgba(0, 0, 0, 0.03);
-            }
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; } /* Отключаем стандартный курсор */
+        * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
 
         body {
-            font-family: 'SF Pro Display', -apple-system, sans-serif;
+            font-family: 'Manrope', sans-serif;
             background: var(--bg);
             color: var(--text);
             overflow-x: hidden;
-            transition: background 0.8s ease;
+            height: 100vh; /* Фиксируем высоту для прелоадера */
+            overflow: hidden; /* Блокируем скролл пока грузится */
+        }
+        
+        body.loaded {
+            height: auto;
+            overflow-y: auto;
         }
 
-        /* Кастомный курсор */
+        /* --- PRELOADER --- */
+        #loader {
+            position: fixed; inset: 0;
+            background: #000; z-index: 99999;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            transition: transform 0.8s cubic-bezier(0.7, 0, 0.3, 1);
+        }
+        
+        #loader.finish { transform: translateY(-100%); }
+
+        .loader-text {
+            font-family: 'Syncopate', sans-serif;
+            font-weight: 700; font-size: 2rem;
+            color: var(--accent); letter-spacing: 5px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .progress-container {
+            width: 300px; height: 2px;
+            background: rgba(255,255,255,0.1);
+            position: relative; overflow: hidden;
+        }
+
+        .progress-bar {
+            position: absolute; left: 0; top: 0; height: 100%; width: 0%;
+            background: var(--accent);
+            box-shadow: 0 0 15px var(--accent);
+            transition: width 0.2s;
+        }
+
+        .loader-counter {
+            font-family: 'Syncopate', monospace;
+            margin-top: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.5);
+        }
+
+        /* Шум (Noise Effect) - оптимизирован */
+        .noise {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNTAnIGhlaWdodD0nMjUwJz48ZmlsdGVyIGlkPSdub2lzZSc+PHZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuNjUnIG51bU9jdGF2ZXM9JzMnIHN0aXRjaFRpbGVzPSdzdGl0Y2gnLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWx0ZXI9J3VybCgjbm9pc2UpJyBvcGFjaXR5PScwLjA1Jy8+PC9zdmc+');
+            pointer-events: none; z-index: 9000; opacity: 0.4;
+        }
+
+        #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; }
+
+        /* Курсор */
         #cursor {
-            position: fixed; width: 10px; height: 10px; background: var(--accent);
+            position: fixed; width: 8px; height: 8px; background: var(--text);
             border-radius: 50%; pointer-events: none; z-index: 10000;
-            transition: transform 0.1s ease, background 0.3s ease;
+            mix-blend-mode: difference; transition: transform 0.05s linear;
         }
         #cursor-follower {
-            position: fixed; width: 40px; height: 40px; border: 1px solid var(--accent);
+            position: fixed; width: 40px; height: 40px; border: 1px solid rgba(255,255,255,0.3);
             border-radius: 50%; pointer-events: none; z-index: 9999;
-            transition: transform 0.15s ease, width 0.3s, height 0.3s;
-        }
-
-        /* Анимированный фон */
-        .bg-glow {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: 
-                radial-gradient(circle at 20% 30%, rgba(0, 242, 255, 0.05), transparent 40%),
-                radial-gradient(circle at 80% 70%, rgba(94, 92, 230, 0.05), transparent 40%);
-            z-index: -1; pointer-events: none;
+            transition: transform 0.15s ease, width 0.3s, height 0.3s, background 0.3s;
+            mix-blend-mode: difference;
         }
 
         header {
-            height: 80vh; display: flex; flex-direction: column;
+            height: 90vh; display: flex; flex-direction: column;
             justify-content: center; align-items: center; position: relative;
+            z-index: 2; opacity: 0; transform: scale(0.95);
+            transition: opacity 1s ease 0.5s, transform 1s ease 0.5s;
         }
+        
+        body.loaded header { opacity: 1; transform: scale(1); }
 
         .hero-title {
-            font-size: clamp(3rem, 15vw, 10rem); font-weight: 900;
-            text-transform: uppercase; letter-spacing: -5px;
-            background: linear-gradient(180deg, var(--text) 30%, var(--accent));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            opacity: 0; transform: translateY(50px);
-            animation: reveal 1.2s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+            font-family: 'Syncopate', sans-serif;
+            font-size: clamp(2rem, 8vw, 6rem);
+            font-weight: 700;
+            text-transform: uppercase;
+            position: relative;
+            color: var(--text);
+            letter-spacing: -2px;
+            text-shadow: 2px 2px var(--accent-sec), -2px -2px var(--accent);
+            animation: glitch-anim 3s infinite alternate;
         }
 
-        @keyframes reveal { to { opacity: 1; transform: translateY(0); } }
+        .subtitle {
+            font-family: 'Syncopate', sans-serif;
+            font-size: clamp(0.8rem, 2vw, 1.2rem);
+            letter-spacing: 4px;
+            opacity: 0.7; margin-top: 20px;
+            color: var(--accent);
+            text-transform: lowercase;
+        }
 
-        /* Сетка с эффектом наклона */
+        @keyframes glitch-anim {
+            0% { text-shadow: 2px 2px var(--accent-sec), -2px -2px var(--accent); transform: skew(0deg); }
+            20% { text-shadow: 2px 2px var(--accent-sec), -2px -2px var(--accent); transform: skew(0deg); }
+            21% { text-shadow: -2px 2px var(--accent), 2px -2px var(--accent-sec); transform: skew(10deg); }
+            22% { text-shadow: 2px 2px var(--accent-sec), -2px -2px var(--accent); transform: skew(0deg); }
+            100% { text-shadow: 2px 2px var(--accent-sec), -2px -2px var(--accent); transform: skew(0deg); }
+        }
+
         .gallery {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 40px; padding: 40px; max-width: 1800px; margin: 0 auto;
+            gap: 30px; padding: 40px; max-width: 1800px; margin: 0 auto;
+            position: relative; z-index: 2;
         }
 
         .card {
-            position: relative; border-radius: 24px; overflow: hidden;
-            background: var(--card-bg); transition: transform 0.1s ease;
+            position: relative; border-radius: 16px; overflow: hidden;
+            background: var(--card-bg);
+            /* Скелетная загрузка (эффект пульсации пока нет фото) */
+            background: linear-gradient(90deg, #111, #1a1a1a, #111);
+            background-size: 200% 100%;
+            animation: skeleton 1.5s infinite linear;
+            
             transform-style: preserve-3d; perspective: 1000px;
+            aspect-ratio: 3/4; /* Резервируем место под вертикальные фото */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.3s ease;
         }
 
+        @keyframes skeleton { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* Фото скрыто по умолчанию */
         .card img {
             width: 100%; height: 100%; object-fit: cover;
-            display: block; transition: transform 0.5s ease;
+            display: block; opacity: 0; 
+            transition: opacity 1s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
-        .card:hover img { transform: scale(1.1); }
+        /* Класс, который JS добавит, когда фото загрузится */
+        .card img.loaded { opacity: 1; }
+        .card:hover img { transform: scale(1.05); }
 
-        .card-info {
-            position: absolute; bottom: 0; left: 0; width: 100%;
-            padding: 20px; background: linear-gradient(transparent, rgba(0,0,0,0.8));
-            color: white; opacity: 0; transition: opacity 0.3s;
+        .card-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            opacity: 0; transition: 0.3s;
+            display: flex; align-items: flex-end; padding: 25px;
         }
-        .card:hover .card-info { opacity: 1; }
+        .card:hover .card-overlay { opacity: 1; }
+        
+        .card-text {
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.8rem; letter-spacing: 1px;
+            transform: translateY(20px); transition: 0.3s;
+            color: var(--accent);
+        }
+        .card:hover .card-text { transform: translateY(0); }
 
-        /* Лайтбокс с эффектом Glassmorphism */
         .lightbox {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--glass); backdrop-filter: blur(25px);
+            background: var(--glass); backdrop-filter: blur(20px);
             display: none; justify-content: center; align-items: center; z-index: 10001;
+            opacity: 0; transition: opacity 0.3s;
         }
-        .lightbox img { max-height: 85vh; max-width: 90vw; border-radius: 15px; box-shadow: 0 40px 100px rgba(0,0,0,0.5); }
+        .lightbox.active { opacity: 1; }
+        .lightbox img {
+            max-height: 85vh; max-width: 90vw; border-radius: 4px;
+            box-shadow: 0 0 50px rgba(0, 242, 255, 0.1);
+            transform: scale(0.9); transition: transform 0.3s;
+        }
+        .lightbox.active img { transform: scale(1); }
 
-        @media (max-width: 600px) { .gallery { grid-template-columns: 1fr; } * { cursor: auto; } #cursor, #cursor-follower { display: none; } }
+        @media (max-width: 600px) {
+            .gallery { grid-template-columns: 1fr; padding: 20px; }
+            * { cursor: auto; }
+            #cursor, #cursor-follower { display: none; }
+            .hero-title { font-size: 2.5rem; }
+            .loader-text { font-size: 1.2rem; }
+        }
     </style>
 </head>
 <body>
 
+<div id="loader">
+    <div class="loader-text">OGURECS SYSTEM</div>
+    <div class="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <div class="loader-counter" id="loader-counter">INITIALIZING... 0%</div>
+</div>
+
+<div class="noise"></div>
 <div id="cursor"></div>
 <div id="cursor-follower"></div>
-<div class="bg-glow"></div>
+<canvas id="bg-canvas"></canvas>
 
 <header>
-    <h1 class="hero-title">OGURECS'S</h1>
-    <p style="letter-spacing: 5px; opacity: 0.5;">PHOTOGRAPHY & ART</p>
+    <h1 class="hero-title">OGURECS'S<br><span style="color:transparent; -webkit-text-stroke: 1px var(--text); font-size: 0.7em;">PHOTO GALLERY</span></h1>
+    <p class="subtitle">visuals / art / aesthetics</p>
 </header>
 
 <main class="gallery" id="gallery"></main>
 
-<div class="lightbox" id="lb"><img id="lb-img" src=""></div>
+<div class="lightbox" id="lb">
+    <img id="lb-img" src="">
+</div>
 
 <script>
+    // --- 1. ЛОГИКА ЗАГРУЗКИ (PRELOADER) ---
+    const loader = document.getElementById('loader');
+    const progressBar = document.getElementById('progress-bar');
+    const counter = document.getElementById('loader-counter');
+    
+    // Эмуляция быстрой загрузки интерфейса
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += Math.random() * 10;
+        if (progress > 100) progress = 100;
+        
+        progressBar.style.width = `${progress}%`;
+        counter.innerText = `INITIALIZING... ${Math.floor(progress)}%`;
+
+        if (progress === 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+                loader.classList.add('finish'); // Убираем шторку
+                document.body.classList.add('loaded'); // Включаем скролл
+                initGallery(); // ЗАПУСКАЕМ ЗАГРУЗКУ ФОТО ТОЛЬКО СЕЙЧАС
+            }, 500);
+        }
+    }, 100); // Скорость заполнения полоски
+
     const files = [
         '20240726_134656.jpg', '20240727_143147.jpg', '20240727_164200.jpg', 
         '20240729_194443.jpg', '20240730_155122.jpg', '20240805_125949.jpg', 
@@ -143,49 +274,123 @@
 
     const gallery = document.getElementById('gallery');
     
-    // Рендер карточек
-    files.forEach(file => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `<img src="img/${file}" loading="lazy"><div class="card-info">Shot by Ogurec</div>`;
-        gallery.appendChild(card);
+    // Функция запуска галереи (вызывается после исчезновения прелоадера)
+    function initGallery() {
+        files.forEach((file, index) => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            
+            // Сразу создаем карточку, но картинку не грузим
+            card.innerHTML = `
+                <div class="card-overlay"><span class="card-text">OGUREC /// RAW</span></div>
+            `;
+            
+            // Создаем объект картинки в памяти
+            const img = new Image();
+            img.alt = "photo";
+            
+            // Когда картинка реально скачается:
+            img.onload = () => {
+                card.prepend(img); // Вставляем в карточку
+                // Небольшая задержка для плавности, чтобы CSS успел подхватить opacity: 0
+                setTimeout(() => img.classList.add('loaded'), 50); 
+                card.style.animation = 'none'; // Убираем пульсацию скелета
+                card.style.background = 'var(--card-bg)';
+            };
 
-        // Эффект наклона (Tilt)
-        card.addEventListener('mousemove', (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const xc = rect.width / 2;
-            const yc = rect.height / 2;
-            const dx = x - xc;
-            const dy = y - yc;
-            card.style.transform = `rotateY(${dx / 15}deg) rotateX(${-dy / 15}deg)`;
+            // Ставим задержку старта загрузки для каждой картинки (очередь)
+            // Это разгружает сеть. Первые грузятся сразу, остальные с паузой.
+            setTimeout(() => {
+                img.src = `img/${file}`;
+            }, index * 100); // Каждые 100мс запускаем загрузку следующей
+
+            gallery.appendChild(card);
+
+            // 3D Tilt Logic
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const dx = (x - rect.width / 2) / 20;
+                const dy = (y - rect.height / 2) / 20;
+                card.style.transform = `rotateY(${dx}deg) rotateX(${-dy}deg) scale(1.02)`;
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = `rotateY(0deg) rotateX(0deg) scale(1)`;
+            });
+
+            card.onclick = () => {
+                const lb = document.getElementById('lb');
+                const lbImg = document.getElementById('lb-img');
+                lbImg.src = `img/${file}`;
+                lb.style.display = 'flex';
+                setTimeout(() => lb.classList.add('active'), 10);
+            };
         });
+    }
 
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = `rotateY(0deg) rotateX(0deg)`;
-        });
-
-        card.onclick = () => {
-            document.getElementById('lb-img').src = `img/${file}`;
-            document.getElementById('lb').style.display = 'flex';
-        };
-    });
-
-    // Курсор
+    // --- ОСТАЛЬНЫЕ СКРИПТЫ (Курсор, Фон) ---
     const cursor = document.getElementById('cursor');
     const follower = document.getElementById('cursor-follower');
+    
     document.addEventListener('mousemove', (e) => {
         cursor.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
-        follower.style.transform = `translate3d(${e.clientX - 15}px, ${e.clientY - 15}px, 0)`;
+        follower.style.transform = `translate3d(${e.clientX - 20}px, ${e.clientY - 20}px, 0)`;
     });
 
-    document.querySelectorAll('.card').forEach(c => {
-        c.onmouseenter = () => { follower.style.width = '80px'; follower.style.height = '80px'; follower.style.background = 'var(--accent)'; follower.style.opacity = '0.3'; };
-        c.onmouseleave = () => { follower.style.width = '40px'; follower.style.height = '40px'; follower.style.background = 'transparent'; follower.style.opacity = '1'; };
-    });
+    // Живой фон
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let particles = [];
 
-    document.getElementById('lb').onclick = () => document.getElementById('lb').style.display = 'none';
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * width;
+            this.y = Math.random() * height;
+            this.vx = (Math.random() - 0.5) * 0.5;
+            this.vy = (Math.random() - 0.5) * 0.5;
+            this.size = Math.random() * 2;
+            this.color = Math.random() > 0.5 ? 'rgba(0, 242, 255, ' : 'rgba(94, 92, 230, ';
+        }
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            if (this.x < 0) this.x = width;
+            if (this.x > width) this.x = 0;
+            if (this.y < 0) this.y = height;
+            if (this.y > height) this.y = 0;
+        }
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = this.color + (Math.random() * 0.5 + 0.2) + ')';
+            ctx.fill();
+        }
+    }
+
+    for (let i = 0; i < 80; i++) particles.push(new Particle()); // Чуть меньше частиц для скорости
+
+    function animate() {
+        ctx.clearRect(0, 0, width, height);
+        particles.forEach(p => { p.update(); p.draw(); });
+        requestAnimationFrame(animate);
+    }
+    animate();
+
+    const lb = document.getElementById('lb');
+    lb.onclick = () => {
+        lb.classList.remove('active');
+        setTimeout(() => lb.style.display = 'none', 300);
+    };
 </script>
 
 </body>
