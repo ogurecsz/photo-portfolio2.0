@@ -91,12 +91,11 @@
 
         /* LIQUID GLASS TEXT EFFECT */
         .glass-title {
-            /* Используем Manrope для красивого lowercase, Syncopate слишком широкий */
             font-family: 'Manrope', sans-serif; 
             font-size: clamp(3rem, 11vw, 9rem);
-            font-weight: 800; /* Жирнее */
-            text-transform: lowercase; /* Принудительно маленькие буквы */
-            letter-spacing: -0.05em; /* Плотнее */
+            font-weight: 800; 
+            text-transform: lowercase !important; /* Принудительно маленькие */
+            letter-spacing: -0.05em; 
             color: rgba(255, 255, 255, 0.02);
             -webkit-text-stroke: 1px rgba(255, 255, 255, 0.5);
             backdrop-filter: blur(4px);
@@ -109,7 +108,7 @@
         }
         
         .glass-title::before {
-            content: "by ogurecs";
+            content: "by ogurecs"; /* Текст маленькими */
             position: absolute; inset: 0;
             background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%);
             background-clip: text; -webkit-background-clip: text;
@@ -194,25 +193,59 @@
 </div>
 
 <script>
+    /* Отсортировано: ТОП -> Природа/Животные -> Город/Разное -> Прочее */
     const files = [
-        '20240726_134656.jpg', '20240727_143147.jpg', '20240727_164200.jpg', 
-        '20240729_194443.jpg', '20240730_155122.jpg', '20240805_125949.jpg', 
-        '20240816_163710.jpg', '20240819_164819.jpg', '20240915_123036.jpg', 
-        '20250406_050742.jpg', '20250703_175003.jpg', '20250711_020233.jpg', 
-        '20250711_205925.jpg', '20250712_200728.jpg', '20250713_200247.jpg', 
-        '20250713_202010.jpg', '20250807_114242.jpg', '20250811_192428.jpg', 
-        '20250905_114908.jpg', '20250907_141431_edit_104530299545696.jpg', 
-        '20250907_182546.jpg', '20250911_132125_edit_73347268173425.jpg', 
-        '20250911_163333.jpg', '20250911_184120.jpg', '20250913_123720.jpg', 
-        'IMG_20250923_164102.jpg', 'IMG_20250927_190539.jpg', 'IMG_20250927_191158.jpg', 
-        'IMG_20251008_173052.jpg', 'IMG_20251008_174454.jpg', 'IMG_20251025_200805.jpg', 
-        'IMG_20251122_223257.jpg', 'IMG_20251122_225812.jpg', 'IMG_20251122_230921.jpg', 
-        'IMG_20251127_080916.jpg', 'IMG_20251129_192327.jpg', 'IMG_20251129_193515.jpg', 
-        'IMG_20251203_124126_edit_84514267294997.jpg', 'IMG_20251224_091254_edit_3904401700852.jpg', 
+        // === S TIER (Закаты, Ночной город, Эпик) ===
+        '20250712_200728.jpg', 
+        'IMG_20251129_192327.jpg',
+        '20240729_194443.jpg',
+        '20240819_164819.jpg',
+        '20250911_184120.jpg',
+        'IMG_20250927_191158.jpg',
+        '20250711_020233.jpg',
+        '20250907_141431_edit_104530299545696.jpg',
+        '20250711_205925.jpg',
+        'IMG_20251129_193515.jpg',
+
+        // === A TIER (Природа, Море, Эстетика) ===
+        '20250907_182546.jpg',
+        '20250811_192428.jpg',
+        '20240915_123036.jpg',
+        '20250713_200247.jpg', // котик
+        '20250713_202010.jpg', // котик
+        '20240727_143147.jpg', // лебедь
+        '20240726_134656.jpg',
+        '20240727_164200.jpg',
+        '20250911_163333.jpg',
+        '20250913_123720.jpg',
+        '20250905_114908.jpg',
+        'IMG_20251127_080916.jpg',
+
+        // === B TIER (Интересное, город) ===
+        'IMG_20251203_124126_edit_84514267294997.jpg',
+        '20250807_114242.jpg',
+        '20240805_125949.jpg',
+        '20250911_132125_edit_73347268173425.jpg',
+        '20240816_163710.jpg',
+        '20240730_155122.jpg',
+        'IMG_20251224_091254_edit_3904401700852.jpg',
+
+        // === C TIER (Снег, улицы, повседневное) ===
+        'IMG_20251122_223257.jpg',
+        'IMG_20251122_230921.jpg',
+        'IMG_20251122_225812.jpg',
+        'IMG_20251025_200805.jpg',
+        'IMG_20250927_190539.jpg',
+        'IMG_20250923_164102.jpg',
+        'IMG_20251008_173052.jpg',
+        'IMG_20251008_174454.jpg',
+        
+        // === D TIER (Прочее, скриншоты) ===
+        '20250406_050742.jpg',
         'Screenshot_20251110_160321914_edit_129512775832520.jpg'
     ];
 
-    const randomHero = files[Math.floor(Math.random() * files.length)];
+    const randomHero = files[Math.floor(Math.random() * 5)]; // Берём фон только из топ-5
     document.getElementById('hero-bg').style.backgroundImage = `url('img/${randomHero}')`;
 
     const loader = document.getElementById('loader');
@@ -248,7 +281,7 @@
             setTimeout(() => {
                 img.src = `img/${file}`;
                 img.onload = () => img.classList.add('loaded');
-            }, i * 50);
+            }, i * 30); // Чуть ускорил появление
 
             card.appendChild(img);
             gallery.appendChild(card);
