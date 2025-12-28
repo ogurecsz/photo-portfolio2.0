@@ -2,8 +2,8 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OGURECS'S | Tiered Gallery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OGURECS'S Gallery</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
@@ -13,23 +13,28 @@
             --text: #ffffff;
             --glass-card: rgba(255, 255, 255, 0.03);
             --glass-border: rgba(255, 255, 255, 0.1);
-            --tier-s: #ffd700; /* Золото */
-            --tier-a: #c0c0c0; /* Серебро */
-            --tier-b: #cd7f32; /* Бронза */
+            --tier-s: #ffd700;
+            --tier-a: #c0c0c0;
+            --tier-b: #cd7f32;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
+        /* базовая оптимизация */
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        /* скрываем курсор только на десктопах с мышкой */
+        @media (pointer: fine) {
+            * { cursor: none; }
+        }
 
         body {
             font-family: 'Manrope', sans-serif;
             background: var(--bg);
             color: var(--text);
             overflow-x: hidden;
-            height: 100vh;
-            overflow: hidden;
+            line-height: 1.5;
         }
         
-        body.loaded { height: auto; overflow-y: auto; }
+        body:not(.loaded) { height: 100vh; overflow: hidden; }
 
         /* --- PRELOADER --- */
         #loader {
@@ -40,152 +45,104 @@
         #loader.finish { transform: translateY(-100%); }
 
         .loader-text {
-            font-family: 'Syncopate', sans-serif; font-weight: 700; font-size: 2rem;
-            color: var(--text); letter-spacing: 5px; margin-bottom: 20px;
-            text-transform: uppercase;
+            font-family: 'Syncopate', sans-serif; font-weight: 700; font-size: clamp(1rem, 5vw, 2rem);
+            color: var(--text); letter-spacing: 5px; margin-bottom: 20px; text-align: center;
         }
 
-        .progress-bar-bg {
-            width: 300px; height: 2px; background: rgba(255,255,255,0.1);
-            position: relative; overflow: hidden;
-        }
-        .progress-bar {
-            position: absolute; left: 0; top: 0; height: 100%; width: 0%;
-            background: var(--text); box-shadow: 0 0 10px rgba(255,255,255,0.5);
-            transition: width 0.2s;
-        }
-        .loader-counter {
-            font-family: 'Syncopate', monospace; margin-top: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.5);
-        }
+        .progress-bar-bg { width: min(300px, 80%); height: 2px; background: rgba(255,255,255,0.1); position: relative; }
+        .progress-bar { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: var(--text); transition: width 0.2s; }
 
-        /* --- HERO & BACKGROUND --- */
+        /* --- BACKGROUND --- */
         #hero-bg {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -2; background-size: cover; background-position: center;
-            opacity: 0.4; filter: blur(4px) grayscale(30%);
-            transition: opacity 1s ease;
+            position: fixed; inset: 0; z-index: -2; background-size: cover; background-position: center;
+            opacity: 0.3; filter: blur(8px); transition: opacity 1.5s ease;
         }
         .overlay-grad {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, rgba(5,5,5,0.2), var(--bg));
-            z-index: -1; pointer-events: none;
+            position: fixed; inset: 0; z-index: -1;
+            background: linear-gradient(to bottom, rgba(5,5,5,0.4), var(--bg) 90%);
+            pointer-events: none;
         }
 
         /* CURSOR */
-        #cursor {
-            position: fixed; width: 8px; height: 8px; background: #fff;
-            border-radius: 50%; pointer-events: none; z-index: 10000;
-            mix-blend-mode: exclusion;
+        #cursor, #cursor-follower {
+            position: fixed; pointer-events: none; z-index: 10000; mix-blend-mode: exclusion; display: none;
         }
-        #cursor-follower {
-            position: fixed; width: 40px; height: 40px; border: 1px solid rgba(255,255,255,0.4);
-            border-radius: 50%; pointer-events: none; z-index: 9999;
-            transition: transform 0.1s ease; mix-blend-mode: exclusion;
+        @media (pointer: fine) {
+            #cursor { display: block; width: 8px; height: 8px; background: #fff; border-radius: 50%; }
+            #cursor-follower { display: block; width: 40px; height: 40px; border: 1px solid rgba(255,255,255,0.4); border-radius: 50%; transition: transform 0.1s ease; }
         }
 
         header {
-            height: 90vh; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; position: relative;
-            z-index: 2; opacity: 0; transform: scale(0.95);
-            transition: opacity 1.2s ease 0.5s, transform 1.2s ease 0.5s;
+            height: 80vh; display: flex; justify-content: center; align-items: center;
+            opacity: 0; transform: translateY(20px); transition: 1.2s ease 0.5s;
         }
-        body.loaded header { opacity: 1; transform: scale(1); }
+        body.loaded header { opacity: 1; transform: translateY(0); }
 
+        /* ИСПРАВЛЕННЫЙ ЗАГОЛОВОК */
         .glass-title {
-            font-family: 'Manrope', sans-serif; 
-            font-size: clamp(3rem, 11vw, 9rem);
-            font-weight: 800; 
-            text-transform: lowercase; 
-            letter-spacing: -0.05em; 
-            color: rgba(255, 255, 255, 0.02);
-            -webkit-text-stroke: 1px rgba(255, 255, 255, 0.5);
-            backdrop-filter: blur(4px);
-            text-shadow: 0 0 30px rgba(255, 255, 255, 0.15);
-            position: relative; z-index: 10; line-height: 1;
+            font-size: clamp(3.5rem, 15vw, 10rem);
+            font-weight: 800;
+            text-transform: lowercase;
+            letter-spacing: -0.04em;
+            position: relative;
+            color: transparent;
+            background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.1) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        
-        .glass-title::before {
-            content: "by ogurecs";
-            position: absolute; inset: 0;
-            background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%);
-            background-clip: text; -webkit-background-clip: text;
-            color: transparent; -webkit-text-stroke: 0;
-            background-size: 200% auto;
-            animation: shine 6s infinite linear;
-            pointer-events: none;
-        }
-        @keyframes shine { to { background-position: 200% center; } }
 
         /* --- TIER SECTIONS --- */
-        .tier-section {
-            max-width: 1800px; margin: 0 auto 60px; padding: 0 40px;
-            position: relative; z-index: 2;
-        }
+        .tier-section { width: 100%; max-width: 1600px; margin: 0 auto 100px; padding: 0 5%; }
         
         .tier-header {
-            font-family: 'Syncopate', sans-serif;
-            font-size: 3rem; font-weight: 700;
-            margin-bottom: 30px; margin-top: 50px;
-            color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.3);
-            display: flex; align-items: baseline; gap: 20px;
-            opacity: 0; transform: translateY(20px);
-            transition: all 0.8s ease;
+            font-family: 'Syncopate', sans-serif; margin-bottom: 40px;
+            display: flex; flex-direction: column; gap: 5px;
         }
-        .loaded .tier-header { opacity: 1; transform: translateY(0); }
-
-        .tier-label { text-transform: uppercase; }
-        .tier-score { 
-            font-family: 'Manrope', sans-serif; 
-            font-size: 1rem; color: rgba(255,255,255,0.4); 
-            -webkit-text-stroke: 0; letter-spacing: 0;
-        }
+        .tier-label { font-size: clamp(2rem, 8vw, 4rem); font-weight: 700; text-transform: uppercase; }
+        .tier-score { font-family: 'Manrope', sans-serif; font-size: 0.9rem; color: rgba(255,255,255,0.4); text-transform: none; }
         
-        /* Цвета тиров */
-        .s-tier .tier-label { text-shadow: 0 0 20px rgba(255, 215, 0, 0.3); -webkit-text-stroke: 1px var(--tier-s); }
-        .a-tier .tier-label { text-shadow: 0 0 20px rgba(192, 192, 192, 0.3); -webkit-text-stroke: 1px var(--tier-a); }
-        .b-tier .tier-label { text-shadow: 0 0 20px rgba(205, 127, 50, 0.3); -webkit-text-stroke: 1px var(--tier-b); }
+        .s-tier .tier-label { color: var(--tier-s); text-shadow: 0 0 30px rgba(255, 215, 0, 0.2); }
+        .a-tier .tier-label { color: var(--tier-a); }
+        .b-tier .tier-label { color: var(--tier-b); }
 
-        /* --- GALLERY GRID --- */
+        /* GALLERY GRID */
         .gallery-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 20px;
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 350px), 1fr));
+            gap: 25px;
         }
 
         .card {
-            position: relative; border-radius: 12px; overflow: hidden;
+            position: relative; border-radius: 16px; overflow: hidden;
             background: var(--glass-card); border: 1px solid var(--glass-border);
-            aspect-ratio: 3/4; cursor: none;
-            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            aspect-ratio: 4/5; transition: 0.5s cubic-bezier(0.2, 1, 0.3, 1);
         }
         .card img {
             width: 100%; height: 100%; object-fit: cover;
-            opacity: 0; transition: opacity 0.8s ease, transform 0.6s ease;
-            display: block;
+            opacity: 0; transition: 1s ease;
         }
         .card img.loaded { opacity: 1; }
-        .card:hover img { transform: scale(1.08); }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.5); }
+        
+        @media (hover: hover) {
+            .card:hover { transform: translateY(-10px) scale(1.02); border-color: rgba(255,255,255,0.3); }
+            .card:hover img { transform: scale(1.1); }
+        }
 
         /* LIGHTBOX */
         .lightbox {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.95);
-            backdrop-filter: blur(10px); display: none;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.98);
+            backdrop-filter: blur(20px); display: none;
             justify-content: center; align-items: center; z-index: 10001;
-            opacity: 0; transition: opacity 0.3s;
+            opacity: 0; transition: 0.3s; padding: 20px;
         }
         .lightbox.active { opacity: 1; }
-        .lightbox img {
-            max-height: 90vh; max-width: 95vw; border-radius: 4px;
-            box-shadow: 0 0 60px rgba(255, 255, 255, 0.05);
-        }
+        .lightbox img { max-height: 90vh; max-width: 100%; border-radius: 8px; object-fit: contain; }
 
-        @media (max-width: 768px) {
-            .tier-section { padding: 0 15px; }
-            .gallery-grid { gap: 15px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
-            .tier-header { font-size: 2rem; margin-top: 30px; }
-            #cursor, #cursor-follower { display: none; }
-            * { cursor: auto; }
-            .glass-title { font-size: 3.5rem; }
+        @media (max-width: 600px) {
+            .tier-section { margin-bottom: 60px; }
+            .gallery-grid { gap: 15px; }
+            header { height: 60vh; }
         }
     </style>
 </head>
@@ -193,10 +150,7 @@
 
 <div id="loader">
     <div class="loader-text">OGURECS'S SITE</div>
-    <div class="progress-bar-bg">
-        <div class="progress-bar" id="progress-bar"></div>
-    </div>
-    <div class="loader-counter" id="loader-counter">0%</div>
+    <div class="progress-bar-bg"><div class="progress-bar" id="progress-bar"></div></div>
 </div>
 
 <div id="hero-bg"></div>
@@ -209,154 +163,86 @@
     <h1 class="glass-title">by ogurecs</h1>
 </header>
 
-<main id="main-content">
-    </main>
+<main id="main-content"></main>
 
-<div class="lightbox" id="lb">
-    <img id="lb-img" src="" alt="Full view">
-</div>
+<div class="lightbox" id="lb"><img id="lb-img" src="" alt=""></div>
 
 <script>
-    // Данные разбиты по тирам согласно оценкам профи (от высокого к низкому)
     const tieredData = [
         {
-            name: "S Tier",
-            class: "s-tier",
-            desc: "Masterpiece Collection (8.5 - 9.5)",
-            files: [
-                '20250811_192428.jpg', // 9.5
-                'IMG_20251122_223257.jpg', // 9.3
-                'IMG_20251129_193515.jpg', // 8.9
-                '20240729_194443.jpg', // 8.9
-                '20250712_200728.jpg', // 8.8
-                'IMG_20250927_191158.jpg', // 8.7
-                '20240727_164200.jpg', // 8.7
-                '20250911_184120.jpg', // 8.6
-                '20250911_132125_edit_73347268173425.jpg', // 8.5
-                'IMG_20251129_192327.jpg' // 8.4
-            ]
+            name: "S Tier", class: "s-tier", desc: "the absolute best // 8.5 - 9.5",
+            files: ['20250811_192428.jpg', 'IMG_20251122_223257.jpg', 'IMG_20251129_193515.jpg', '20240729_194443.jpg', '20250712_200728.jpg', 'IMG_20250927_191158.jpg', '20240727_164200.jpg', '20250911_184120.jpg', '20250911_132125_edit_73347268173425.jpg', 'IMG_20251129_192327.jpg']
         },
         {
-            name: "A Tier",
-            class: "a-tier",
-            desc: "Excellent Shots (7.8 - 8.3)",
-            files: [
-                '20250713_200247.jpg', // 8.3
-                '20250913_123720.jpg', // 8.2
-                '20240727_143147.jpg', // 8.2
-                'IMG_20250927_190539.jpg', // 8.1
-                '20240726_134656.jpg', // 8.1
-                '20250713_202010.jpg', // 8.0
-                'IMG_20251224_091254_edit_3904401700852.jpg', // 7.9
-                'IMG_20251008_174454.jpg', // 7.9
-                'IMG_20251127_080916.jpg', // 7.8
-                '20240915_123036.jpg' // 7.8
-            ]
+            name: "A Tier", class: "a-tier", desc: "high quality shots // 7.8 - 8.3",
+            files: ['20250713_200247.jpg', '20250913_123720.jpg', '20240727_143147.jpg', 'IMG_20250927_190539.jpg', '20240726_134656.jpg', '20250713_202010.jpg', 'IMG_20251224_091254_edit_3904401700852.jpg', 'IMG_20251008_174454.jpg', 'IMG_20251127_080916.jpg', '20240915_123036.jpg']
         },
         {
-            name: "B Tier",
-            class: "b-tier",
-            desc: "Standard Gallery (Mixed)",
-            files: [
-                '20250907_141431_edit_104530299545696.jpg', // 7.7
-                'IMG_20251122_230921.jpg', // 7.6
-                '20240819_164819.jpg', // 7.6
-                'IMG_20251025_200805.jpg', // 7.5
-                '20240805_125949.jpg', // 7.5
-                '20250911_163333.jpg', // 7.4
-                '20250905_114908.jpg', // 7.3
-                'IMG_20251122_225812.jpg', // 7.2
-                '20250703_175003.jpg', // 7.2
-                '20250907_182546.jpg', // 7.1
-                '20250711_205925.jpg', // 7.0
-                'IMG_20250923_164102.jpg', // 6.9
-                'Screenshot_20251110_160321914_edit_129512775832520.jpg', // 6.8
-                '20250807_114242.jpg', // 6.7
-                'IMG_20251203_124126_edit_84514267294997.jpg', // 6.5
-                '20240816_163710.jpg', // 6.4
-                '20250711_020233.jpg', // 6.2
-                '20240730_155122.jpg', // 5.8
-                'IMG_20251008_173052.jpg', // 5.4
-                '20250406_050742.jpg' // 4.1
-            ]
+            name: "B Tier", class: "b-tier", desc: "atmospheric archive // below 7.8",
+            files: ['20250907_141431_edit_104530299545696.jpg', 'IMG_20251122_230921.jpg', '20240819_164819.jpg', 'IMG_20251025_200805.jpg', '20240805_125949.jpg', '20250911_163333.jpg', '20250905_114908.jpg', 'IMG_20251122_225812.jpg', '20250703_175003.jpg', '20250907_182546.jpg', '20250711_205925.jpg', 'IMG_20250923_164102.jpg', 'Screenshot_20251110_160321914_edit_129512775832520.jpg', '20250807_114242.jpg', 'IMG_20251203_124126_edit_84514267294997.jpg', '20240816_163710.jpg', '20250711_020233.jpg', '20240730_155122.jpg', 'IMG_20251008_173052.jpg', '20250406_050742.jpg']
         }
     ];
 
-    // Устанавливаем фон из S-Tier (лучшего)
-    const randomHero = tieredData[0].files[Math.floor(Math.random() * tieredData[0].files.length)];
-    document.getElementById('hero-bg').style.backgroundImage = `url('img/${randomHero}')`;
+    document.getElementById('hero-bg').style.backgroundImage = `url('img/${tieredData[0].files[0]}')`;
 
-    const loader = document.getElementById('loader');
-    const bar = document.getElementById('progress-bar');
-    const txt = document.getElementById('loader-counter');
-    let loadP = 0;
-
-    const interval = setInterval(() => {
-        loadP += Math.random() * 15;
-        if (loadP > 100) loadP = 100;
-        bar.style.width = loadP + '%';
-        txt.innerText = Math.floor(loadP) + '%';
-
-        if (loadP === 100) {
-            clearInterval(interval);
+    // Loader logic
+    let progress = 0;
+    const loaderInterval = setInterval(() => {
+        progress += Math.random() * 20;
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(loaderInterval);
             setTimeout(() => {
-                loader.classList.add('finish');
+                document.getElementById('loader').classList.add('finish');
                 document.body.classList.add('loaded');
                 initGallery();
-            }, 400);
+            }, 500);
         }
-    }, 80);
+        document.getElementById('progress-bar').style.width = progress + '%';
+    }, 100);
 
-    const mainContent = document.getElementById('main-content');
-    
     function initGallery() {
-        let globalDelay = 0;
-
+        const main = document.getElementById('main-content');
         tieredData.forEach(tier => {
-            // Создаем секцию
             const section = document.createElement('section');
             section.className = `tier-section ${tier.class}`;
-
-            // Заголовок тира
-            const header = document.createElement('div');
-            header.className = 'tier-header';
-            header.innerHTML = `
-                <span class="tier-label">${tier.name}</span>
-                <span class="tier-score">// ${tier.desc}</span>
+            section.innerHTML = `
+                <div class="tier-header">
+                    <h2 class="tier-label">${tier.name}</h2>
+                    <p class="tier-score">${tier.desc}</p>
+                </div>
+                <div class="gallery-grid"></div>
             `;
-            section.appendChild(header);
-
-            // Сетка
-            const grid = document.createElement('div');
-            grid.className = 'gallery-grid';
-
+            const grid = section.querySelector('.gallery-grid');
             tier.files.forEach(file => {
                 const card = document.createElement('div');
                 card.className = 'card';
-                const img = new Image();
-                img.loading = "lazy";
-                
-                // Каскадная анимация появления
-                setTimeout(() => {
-                    img.src = `img/${file}`;
-                    img.onload = () => img.classList.add('loaded');
-                }, globalDelay * 50);
-                globalDelay++;
-
-                card.appendChild(img);
+                card.innerHTML = `<img data-src="img/${file}" alt="" loading="lazy">`;
+                card.onclick = () => showLightbox(`img/${file}`);
                 grid.appendChild(card);
-
-                card.onclick = () => {
-                    const lb = document.getElementById('lb');
-                    document.getElementById('lb-img').src = `img/${file}`;
-                    lb.style.display = 'flex';
-                    requestAnimationFrame(() => lb.classList.add('active'));
-                };
             });
-
-            section.appendChild(grid);
-            mainContent.appendChild(section);
+            main.appendChild(section);
         });
+
+        // Lazy load observer for smooth entry
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.onload = () => img.classList.add('loaded');
+                    observer.unobserve(img);
+                }
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('img[data-src]').forEach(img => observer.observe(img));
+    }
+
+    function showLightbox(src) {
+        const lb = document.getElementById('lb');
+        document.getElementById('lb-img').src = src;
+        lb.style.display = 'flex';
+        setTimeout(() => lb.classList.add('active'), 10);
     }
 
     document.getElementById('lb').onclick = function() {
@@ -364,10 +250,10 @@
         setTimeout(() => this.style.display = 'none', 300);
     };
 
-    const cursor = document.getElementById('cursor');
-    const follower = document.getElementById('cursor-follower');
-    
+    // Cursor tracking
     if (window.matchMedia("(pointer: fine)").matches) {
+        const cursor = document.getElementById('cursor');
+        const follower = document.getElementById('cursor-follower');
         document.addEventListener('mousemove', (e) => {
             cursor.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
             follower.style.transform = `translate3d(${e.clientX - 20}px, ${e.clientY - 20}px, 0)`;
