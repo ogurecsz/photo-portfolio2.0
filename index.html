@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OGURECS | Liquid Gallery</title>
+    <title>OGURECS'S | Ultra Gallery</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Manrope:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #050505;
@@ -91,30 +91,31 @@
 
         /* LIQUID GLASS TEXT EFFECT */
         .glass-title {
-            font-family: 'Syncopate', sans-serif;
-            font-size: clamp(3rem, 10vw, 8rem);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: -3px;
-            color: rgba(255, 255, 255, 0.05); /* Почти прозрачный */
-            -webkit-text-stroke: 1px rgba(255, 255, 255, 0.4); /* Контур */
-            backdrop-filter: blur(5px); /* Размытие фона внутри букв (работает не везде, но где работает - топ) */
+            /* Используем Manrope для красивого lowercase, Syncopate слишком широкий */
+            font-family: 'Manrope', sans-serif; 
+            font-size: clamp(3rem, 11vw, 9rem);
+            font-weight: 800; /* Жирнее */
+            text-transform: lowercase; /* Принудительно маленькие буквы */
+            letter-spacing: -0.05em; /* Плотнее */
+            color: rgba(255, 255, 255, 0.02);
+            -webkit-text-stroke: 1px rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(4px);
             text-shadow: 
-                0 0 30px rgba(255, 255, 255, 0.1),
+                0 0 30px rgba(255, 255, 255, 0.15),
                 10px 10px 20px rgba(0, 0, 0, 0.5);
             position: relative;
             z-index: 10;
+            line-height: 1;
         }
         
-        /* Дополнительный блеск */
         .glass-title::before {
-            content: "OGURECS";
+            content: "by ogurecs";
             position: absolute; inset: 0;
-            background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+            background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%);
             background-clip: text; -webkit-background-clip: text;
             color: transparent; -webkit-text-stroke: 0;
             background-size: 200% auto;
-            animation: shine 5s infinite linear;
+            animation: shine 6s infinite linear;
             pointer-events: none;
         }
 
@@ -162,14 +163,14 @@
             .gallery { padding: 15px; gap: 15px; }
             #cursor, #cursor-follower { display: none; }
             * { cursor: auto; }
-            .glass-title { font-size: 3rem; }
+            .glass-title { font-size: 3.5rem; }
         }
     </style>
 </head>
 <body>
 
 <div id="loader">
-    <div class="loader-text">OGURECS SITE</div>
+    <div class="loader-text">OGURECS'S SITE</div>
     <div class="progress-bar-bg">
         <div class="progress-bar" id="progress-bar"></div>
     </div>
@@ -183,7 +184,7 @@
 <div id="cursor-follower"></div>
 
 <header>
-    <h1 class="glass-title">OGURECS</h1>
+    <h1 class="glass-title">by ogurecs</h1>
 </header>
 
 <main class="gallery" id="gallery"></main>
@@ -193,7 +194,6 @@
 </div>
 
 <script>
-    // СПИСОК ФАЙЛОВ
     const files = [
         '20240726_134656.jpg', '20240727_143147.jpg', '20240727_164200.jpg', 
         '20240729_194443.jpg', '20240730_155122.jpg', '20240805_125949.jpg', 
@@ -212,11 +212,9 @@
         'Screenshot_20251110_160321914_edit_129512775832520.jpg'
     ];
 
-    // РАНДОМ ФОН ДЛЯ ХЕДЕРА
     const randomHero = files[Math.floor(Math.random() * files.length)];
     document.getElementById('hero-bg').style.backgroundImage = `url('img/${randomHero}')`;
 
-    // ЗАГРУЗКА
     const loader = document.getElementById('loader');
     const bar = document.getElementById('progress-bar');
     const txt = document.getElementById('loader-counter');
@@ -238,18 +236,15 @@
         }
     }, 80);
 
-    // ГАЛЕРЕЯ
     const gallery = document.getElementById('gallery');
     
     function initGallery() {
         files.forEach((file, i) => {
             const card = document.createElement('div');
             card.className = 'card';
-            
             const img = new Image();
-            img.loading = "lazy"; // Нативный ленивый лоадинг
+            img.loading = "lazy";
             
-            // Отложенная загрузка скриптом для плавности появления
             setTimeout(() => {
                 img.src = `img/${file}`;
                 img.onload = () => img.classList.add('loaded');
@@ -258,7 +253,6 @@
             card.appendChild(img);
             gallery.appendChild(card);
 
-            // Lightbox Click
             card.onclick = () => {
                 const lb = document.getElementById('lb');
                 document.getElementById('lb-img').src = `img/${file}`;
@@ -268,17 +262,14 @@
         });
     }
 
-    // ЛАЙТБОКС (закрытие)
     document.getElementById('lb').onclick = function() {
         this.classList.remove('active');
         setTimeout(() => this.style.display = 'none', 300);
     };
 
-    // КУРСОР
     const cursor = document.getElementById('cursor');
     const follower = document.getElementById('cursor-follower');
     
-    // Проверка на тач-устройства, чтобы не грузить логику зря
     if (window.matchMedia("(pointer: fine)").matches) {
         document.addEventListener('mousemove', (e) => {
             cursor.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
